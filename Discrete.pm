@@ -227,7 +227,7 @@ sub _all_stats
 		}
 	}
 	
-	print("count: $count, _index ",$self->{_index},"\n");
+	print __PACKAGE__,"count: $count, _index ",$self->{_index},"\n" if $DEBUG;
 
 	$self->{count}  = $count;
 	$self->{uniq}   = $uniq;
@@ -368,6 +368,8 @@ __END__
 =head1 NAME
 
 Statistics::Descriptive::Discrete - Compute descriptive statistics for discrete data sets.
+
+To install, use the CPAN module (https://metacpan.org/pod/Statistics::Descriptive::Discrete).
 
 =head1 SYNOPSIS
 
@@ -523,8 +525,9 @@ Effectively the same as
 
 =head1 NOTE
 
-The interface for this module is almost identical to Statistics::Descriptive.  
-This module is incomplete and not fully tested.  
+The interface for this module strives to be identical to Statistics::Descriptive.  
+There are differences, particularly with frequency_distribution(). Read the docs
+for each method.
 
 =head1 BUGS
 
@@ -557,9 +560,7 @@ from Statistics::Descriptive
 
 =head1 AUTHOR
 
-Rhet Turnbull, RhetTbull on perlmonks.org, rhettbull at hotmail.com
-
-If you find this code useful, I would appreciate an email letting me know.
+Rhet Turnbull, rturnbull+cpan@gmail.com
 
 =head1 CREDIT
 
