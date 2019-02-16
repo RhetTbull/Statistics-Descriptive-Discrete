@@ -2,7 +2,7 @@
 
 Statistics::Descriptive::Discrete - Compute descriptive statistics for discrete data sets.
 
-To install, use the CPAN \[module\](https://metacpan.org/pod/Statistics::Descriptive::Discrete).
+To install, use the CPAN [module](https://metacpan.org/pod/Statistics::Descriptive::Discrete).
 
 # SYNOPSIS
 
@@ -154,8 +154,9 @@ the 400MB used by Statistics::Descriptive::Full for the same data set.
 
 # NOTE
 
-The interface for this module is almost identical to Statistics::Descriptive.  
-This module is incomplete and not fully tested.  
+The interface for this module strives to be identical to Statistics::Descriptive.  
+There are differences, particularly with frequency\_distribution(). Read the docs
+for each method.
 
 # BUGS
 
@@ -170,9 +171,7 @@ from Statistics::Descriptive
 
 # AUTHOR
 
-Rhet Turnbull, RhetTbull on perlmonks.org, rhettbull at hotmail.com
-
-If you find this code useful, I would appreciate an email letting me know.
+Rhet Turnbull, rturnbull+cpan@gmail.com
 
 # CREDIT
 
