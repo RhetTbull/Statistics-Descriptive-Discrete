@@ -3,10 +3,17 @@
 use strict;
 use warnings;
 
-use Test::More tests => 27;
+use Test::More tests => 34;
 use Statistics::Descriptive::Discrete;
 use lib 't/lib';
 use Utils qw/array_cmp/;
+
+{
+    #check calling methonds before adding data
+    my $stats = Statistics::Descriptive::Discrete->new();
+    is($stats->mean,undef,"mean should be undef");
+    is($stats->count,0,"count should be 0");
+}
 
 {
     my $stats = Statistics::Descriptive::Discrete->new();
@@ -15,7 +22,7 @@ use Utils qw/array_cmp/;
 
     #3: 
     is($stats->count,10,"Count = 10");
- 
+
     #4: get_data
     my @d = $stats->get_data();
     my @sorted_data = (1,1,2,2,2,3,3,4,4,5);
@@ -24,8 +31,14 @@ use Utils qw/array_cmp/;
     #4: min
     is($stats->min,1,"min = 1");
 
+    #5: mindex
+    is($stats->mindex,0,"mindex = 0");
+
     #5: max
     is($stats->max,5,"max = 5");
+
+    #6: maxdex
+    is($stats->maxdex,4,"maxdex = 4");
 
     #6: uniq
     is($stats->uniq,5,"uniq = 5");
@@ -110,5 +123,11 @@ use Utils qw/array_cmp/;
     is($stats->uniq,3,"uniq = 3");
     is($stats->sum,29,"sum = 29");
     is($stats->count,9,"count = 9");
+    is($stats->mindex,0,"mindex = 0");
+    is($stats->maxdex,5,"maxdex = 5");
+    $stats->add_data_tuple(0,1);
+    is($stats->mindex,9,"mindex = 9");
+
+
 }
 

@@ -21,6 +21,8 @@ $DEBUG = 0;
   median				=> undef,
   min					=> undef,
   max					=> undef,
+	mindex			=> undef,
+	maxdex			=> undef,
   standard_deviation	=> undef,
   sample_range			=> undef,
   variance				=> undef,
@@ -35,8 +37,10 @@ sub new
 	my $self = {};
 	$self->{_permitted} = \%autosubs;
 	$self->{data} = ();
+	$self->{_dataindex} = (); #index of where each value first seen when adding data
 	$self->{dirty} = 1; #is the data dirty?
-	
+	$self->{_index} = 0; #current index of number of data items added
+
 	bless ($self,$class);
 	print __PACKAGE__,"->new(",join(',',@_),")\n" if $DEBUG;
 	return $self;
@@ -60,7 +64,9 @@ sub clear
         delete $self->{$key};  # Delete any out of date cached key
     }
 	$self->{data} = ();
+	$self->{_dataindex} = ();
 	$self->{dirty} = 1;
+	$self->{_index} = 0;
 }
 
 sub add_data
@@ -76,6 +82,10 @@ sub add_data
 	{
 		$val += 0; 
 		$self->{data}{$val}++;
+		if (not defined $self->{_dataindex}{$val}) {
+			$self->{_dataindex}{$val} = $self->{_index};
+		}
+		$self->{_index}++;
 		#set dirty flag so we know cached stats are invalid
 		$self->{dirty}++;
 		$val = shift; #get next element
@@ -105,6 +115,10 @@ sub add_data_tuple
 	{
 		$val += 0; 
 		$self->{data}{$val} += $count;
+		if (not defined $self->{_dataindex}{$val}) {
+			$self->{_dataindex}{$val} = $self->{_index};
+		}
+		$self->{_index} += $count;
 		#set dirty flag so we know cached stats are invalid
 		$self->{dirty}++;
 		$val = shift; #get next element
@@ -165,6 +179,9 @@ sub _all_stats
 			$moden = $n;
 		}
 	}
+	my $mindex = $self->{_dataindex}{$min};
+	my $maxdex = $self->{_dataindex}{$max};
+
 	my $mean = $sum/$count;
 	
 	my $stddev = 0;
@@ -210,6 +227,8 @@ sub _all_stats
 		}
 	}
 	
+	print("count: $count, _index ",$self->{_index},"\n");
+
 	$self->{count}  = $count;
 	$self->{uniq}   = $uniq;
 	$self->{sum}    = $sum;
@@ -217,6 +236,8 @@ sub _all_stats
 	$self->{variance} = $variance;
 	$self->{min}    = $min;
 	$self->{max}    = $max;
+	$self->{mindex} = $mindex;
+	$self->{maxdex} = $maxdex;
 	$self->{sample_range} = $max - $min;
 	$self->{mean}    = $mean;
 	$self->{median} = $median;
@@ -417,6 +438,27 @@ Returns the maximum value of the data set.
 
 Returns the minimum value of the data set.
 
+=item $stat->mindex();
+
+Returns the index of the minimum value of the data set.  
+The index returned is the first occurence of the minimum value.
+
+Note: the index is determined by the order data was added using add_data() or add_data_tuple().
+It is meaningless in context of get_data() as get_data() does not return values in the same
+order in which they were added.  This behavior is different than Statistics::Descriptive which
+does preserve order.  
+
+=item $stat->maxdex();
+
+Returns the index of the maximum value of the data set.  
+The index returned is the first occurence of the maximum value.
+
+Note: the index is determined by the order data was added using 
+add_data() or add_data_tuple(). It is meaningless in context of 
+get_data() as get_data() does not return values in the same
+order in which they were added.  This behavior is different than 
+Statistics::Descriptive which does preserve order.  
+
 =item $stat->count();
 
 Returns the total number of elements in the data set.
@@ -460,6 +502,12 @@ Returns the sample range (max - min) of the data set.
 Returns a copy of the data array.  Note: This array could be
 very large and would thus defeat the purpose of using this
 module.  Make sure you really need it before using get_data().
+
+The returned array contains the values sorted by value.  It does
+not preserve the order in which the values were added.  Preserving
+order would defeat the purpose of this module which trades speed
+and memory usage over preserving order.  If order is important,
+use Statistics::Descriptive.
 
 =item $stat->clear();
 
@@ -532,7 +580,7 @@ Bill Dueber for suggesting the add_data_tuple method.
 
 =head1 COPYRIGHT
 
-  Copyright (c) 2002 Rhet Turnbull. All rights reserved.  This
+  Copyright (c) 2002, 2019 Rhet Turnbull. All rights reserved.  This
   program is free software; you can redistribute it and/or modify it
   under the same terms as Perl itself.
 
