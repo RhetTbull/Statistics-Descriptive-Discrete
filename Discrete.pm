@@ -6,10 +6,9 @@ use strict;
 use warnings;
 use Carp;
 use AutoLoader;
-use vars qw($VERSION $REVISION $AUTOLOAD $DEBUG %autosubs);
+use vars qw($VERSION $AUTOLOAD $DEBUG %autosubs);
 
-$VERSION = '0.07';
-$REVISION = '$Revision: 1.14 $';
+$VERSION = '0.08';
 $DEBUG = 0;
 
 #what subs can be autoloaded?
@@ -104,14 +103,13 @@ sub _all_stats
 	my $count = 0;
 	$count += $_ foreach (values %{$self->{data}});
 
-	#todo: I use keys %{$self->{data}} several times:
-	#should I store it in an array and use the array instead?
+	my @datakeys = keys %{$self->{data}};
 
 	#uniq = number of unique data values
-	my $uniq = keys %{$self->{data}};
+	my $uniq = @datakeys;
 
 	#initialize min, max, mode to an arbitrary value that's in the hash
-	my $default = (keys %{$self->{data}})[0];
+	my $default = $datakeys[0];
 	my $max  = $default; 
 	my $min  = $default;
 	my $mode = $default;
@@ -119,7 +117,7 @@ sub _all_stats
 	my $sum = 0;
 
 	#find min, max, sum, and mode
-	foreach (keys %{$self->{data}})
+	foreach (@datakeys)
 	{
 		my $n = $self->{data}{$_};
 		$sum += $_ * $n;
@@ -145,7 +143,7 @@ sub _all_stats
 		# Thanks to Peter Dienes for finding and fixing a round-off error
 		# in the following variance calculation
 
-		foreach my $val (keys %{$self->{data}})
+		foreach my $val (@datakeys)
 		{
 			$stddev += $self->{data}{$val} * (($val - $mean) ** 2);
 		}
@@ -162,7 +160,7 @@ sub _all_stats
 	my $k = $odd ? ($count-1)/2 : $count/2;
 	my $median = undef;
 	my $temp = 0;
-	MEDIAN: foreach my $val (sort {$a <=> $b} (keys %{$self->{data}}))
+	MEDIAN: foreach my $val (sort {$a <=> $b} (@datakeys))
 	{
 		foreach (1..$self->{data}{$val})
 		{

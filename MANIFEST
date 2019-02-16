@@ -3,8 +3,10 @@ Discrete.pm
 Makefile.PL
 MANIFEST
 README
-test.pl
-
+LICENSE
+t/00-load.t
+t/descr.t
+t/lib/Utils.pm
 examples/statistics_discrete_ex.pl
 
 META.yml                                 Module meta-data (added by MakeMaker)
