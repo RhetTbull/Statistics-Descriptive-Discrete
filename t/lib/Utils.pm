@@ -1,5 +1,10 @@
 package Utils;
 
+# local utils for testing
+# This is copied from Statistics::Descriptive with some changes
+# for Statistics::Descriptive::Discrete
+# see https://metacpan.org/pod/Statistics::Descriptive
+
 use strict;
 use warnings;
 
@@ -9,10 +14,10 @@ our @EXPORT_OK = qw/is_between compare_hash_by_ranges is_array_between array_cmp
 
 use Test::More;
 
+#compare two arrays, element by element
+#return false if any element is different
+#expects arrays to contain only numbers
 sub array_cmp(\@\@) {
-    #compare two arrays, element by element
-    #return false if any element is different
-    #expects arrays to contain only numbers
 
     my @a = @{$_[0]};
     my @b = @{$_[1]};

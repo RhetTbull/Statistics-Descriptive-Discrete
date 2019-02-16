@@ -1,5 +1,10 @@
 #!/usr/bin/perl
 
+# This is copied from Statistics::Descriptive
+# My intent is that Statistics::Descriptive::Discrete pass as many of 
+# Statistics::Descriptive's tests as possible
+# see https://metacpan.org/pod/Statistics::Descriptive
+
 use strict;
 use warnings;
 
