@@ -8,7 +8,7 @@ use Carp;
 use AutoLoader;
 use vars qw($VERSION $AUTOLOAD $DEBUG %autosubs);
 
-$VERSION = '0.08';
+$VERSION = '0.09';
 $DEBUG = 0;
 
 #what subs can be autoloaded?
@@ -33,13 +33,34 @@ sub new
 	my $proto = shift;
 	my $class = ref($proto) || $proto;
 	my $self = {};
-	$self->{permitted} = \%autosubs;
+	$self->{_permitted} = \%autosubs;
 	$self->{data} = ();
 	$self->{dirty} = 1; #is the data dirty?
 	
 	bless ($self,$class);
 	print __PACKAGE__,"->new(",join(',',@_),")\n" if $DEBUG;
 	return $self;
+}
+
+# Clear the stat object & erase all data
+# Object will be ready to use as if new was called
+# Not sure this is more efficient than just creating a new object but
+# maintained for compatability with Statistics::Descriptive
+sub clear
+{
+	my $self = shift;
+    my %keys = %{ $self };
+
+	#remove _permitted from the deletion list
+    delete $keys{"_permitted"};
+
+    foreach my $key (keys %keys) 
+	{ # Check each key in the object
+		print __PACKAGE__,"->clear, deleting $key\n" if $DEBUG;
+        delete $self->{$key};  # Delete any out of date cached key
+    }
+	$self->{data} = ();
+	$self->{dirty} = 1;
 }
 
 sub add_data
@@ -98,6 +119,17 @@ sub _all_stats
 	#I want to keep add_data as lean as possible since it gets called a lot
 	my $self = shift;
 	print __PACKAGE__,"->_all_stats(",join(',',@_),")\n" if $DEBUG;
+
+	#if data is empty, set all stats to undef and return
+	if (!$self->{data})
+	{
+		foreach my $key (keys %{$self->{_permitted}})
+		{
+			$self->{$key} = undef;
+		}
+		$self->{count} = 0;
+		return;
+	}
 
 	#count = total number of data values we have
 	my $count = 0;
@@ -222,7 +254,7 @@ sub frequency_distribution
 	#Behavior is slightly different than Statistics::Descriptive
 	#e.g. if partition is not specified, we use uniq to set the number of partitions
 	#     if partition = 0, then we return the data hash WITHOUT binning it into equal bins
-	#Why? because I like it this way -- I often want to just see how many of each value I saw 
+	#	  I often want to just see how many of each value I saw 
 	#Also, you can manually pass in the bin info (min bin, bin size, and number of partitions)
 	#I don't cache the frequency data like Statistics::Descriptive does since it's not as expensive to compute
 	#but I might add that later
@@ -234,7 +266,7 @@ sub frequency_distribution
 	my $minbin = shift; #upper bound of first bin
 	my $binsize = shift; #how wide is each bin?
 	
-	#if partition == 0, then just give 'em the data hash
+	#if partition == 0, then return the data hash
 	if (defined $partitions && ($partitions == 0))
 	{
 		$self->{frequency_partitions} = 0;
@@ -297,7 +329,7 @@ sub AUTOLOAD {
 	my $name = $AUTOLOAD;
 	$name =~ s/.*://;     ##Strip fully qualified-package portion
 	return if $name eq "DESTROY";
-	unless (exists $self->{permitted}{$name} ) {
+	unless (exists $self->{_permitted}{$name} ) {
 		croak "Can't access `$name' field in class $type";
 	}
 
@@ -428,6 +460,16 @@ Returns the sample range (max - min) of the data set.
 Returns a copy of the data array.  Note: This array could be
 very large and would thus defeat the purpose of using this
 module.  Make sure you really need it before using get_data().
+
+=item $stat->clear();
+
+Clears all data and resets the instance as if it were newly created
+
+Effectively the same as
+
+  my $class = ref($stat);
+  undef $stat;
+  $stat = new $class;
 
 =back
 

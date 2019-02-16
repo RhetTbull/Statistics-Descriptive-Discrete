@@ -5,9 +5,31 @@ use warnings;
 
 require Exporter;
 our @ISA = qw/Exporter/;
-our @EXPORT_OK = qw/is_between compare_hash_by_ranges is_array_between/;
+our @EXPORT_OK = qw/is_between compare_hash_by_ranges is_array_between array_cmp/;
 
 use Test::More;
+
+sub array_cmp(\@\@) {
+    #compare two arrays, element by element
+    #return false if any element is different
+    #expects arrays to contain only numbers
+
+    my @a = @{$_[0]};
+    my @b = @{$_[1]};
+
+    if (@a != @b) {
+        #different lengths
+        return 0;
+    } else {
+        foreach my $i (0 .. $#a) {
+            if ($a[$i] != $b[$i]) {
+                return 0;
+            }
+        }
+    }
+    return 1;
+ 
+}
 
 sub is_between {
     local $Test::Builder::Level = $Test::Builder::Level + 1;

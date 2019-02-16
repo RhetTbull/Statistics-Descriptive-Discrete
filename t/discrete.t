@@ -3,9 +3,10 @@
 use strict;
 use warnings;
 
-use Test::More tests => 14;
-
+use Test::More tests => 27;
 use Statistics::Descriptive::Discrete;
+use lib 't/lib';
+use Utils qw/array_cmp/;
 
 {
     my $stats = Statistics::Descriptive::Discrete->new();
@@ -15,6 +16,11 @@ use Statistics::Descriptive::Discrete;
     #3: 
     is($stats->count,10,"Count = 10");
  
+    #4: get_data
+    my @d = $stats->get_data();
+    my @sorted_data = (1,1,2,2,2,3,3,4,4,5);
+    is(array_cmp(@d,@sorted_data),1,"get_data matches");
+
     #4: min
     is($stats->min,1,"min = 1");
 
@@ -22,7 +28,7 @@ use Statistics::Descriptive::Discrete;
     is($stats->max,5,"max = 5");
 
     #6: uniq
-   is($stats->uniq,5,"uniq = 5");
+    is($stats->uniq,5,"uniq = 5");
 
     #7: mean
     is($stats->mean,2.7,"mean = 2.7");
@@ -36,12 +42,52 @@ use Statistics::Descriptive::Discrete;
     #10: median
     is($stats->median,2.5,"median = 2.5");
 
+    #11: standard_deviation
+    ok(abs($stats->standard_deviation-1.33749350984926) < 0.00001,"standard_deviation ok");
+
+    #12: variance
+    ok(abs($stats->variance-1.78888888888) < 0.00001,"variance ok");
+
+   #13: clear
+    $stats->clear();
+    is($stats->min,undef,"min should be undef now");
+    
+    #14: clear, check count
+    is($stats->count,0,"count should be 0 now");
+
+    #14: now add data and check again
+    $stats->add_data(1,2,3,4,5,4,3,2,1,2);
+
+    #3: 
+    is($stats->count,10,"Count = 10");
+ 
+    #4: min
+    is($stats->min,1,"min = 1");
+
+    #5: max
+    is($stats->max,5,"max = 5");
+
+    #6: uniq
+    is($stats->uniq,5,"uniq = 5");
+
+    #7: mean
+    is($stats->mean,2.7,"mean = 2.7");
+
+    #8: sample_range
+    is($stats->sample_range,4,"sample range = 4");
+
+    #9: mode
+    is($stats->mode,2, "mode = 2");
+
+    #10: median
+    is($stats->median,2.5,"median = 2.5");
 
     #11: standard_deviation
     ok(abs($stats->standard_deviation-1.33749350984926) < 0.00001,"standard_deviation ok");
 
     #12: variance
     ok(abs($stats->variance-1.78888888888) < 0.00001,"variance ok");
+
 }
 
 {
