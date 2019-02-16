@@ -82,7 +82,7 @@ sub add_data
 	{
 		$val += 0; 
 		$self->{data}{$val}++;
-		if (not defined $self->{_dataindex}{$val}) {
+		if (not exists $self->{_dataindex}{$val}) {
 			$self->{_dataindex}{$val} = $self->{_index};
 		}
 		$self->{_index}++;
@@ -115,7 +115,7 @@ sub add_data_tuple
 	{
 		$val += 0; 
 		$self->{data}{$val} += $count;
-		if (not defined $self->{_dataindex}{$val}) {
+		if (not exists $self->{_dataindex}{$val}) {
 			$self->{_dataindex}{$val} = $self->{_index};
 		}
 		$self->{_index} += $count;
