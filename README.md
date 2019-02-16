@@ -204,4 +204,4 @@ and submitting changes:
 
 # SEE ALSO
 
-Statistics::Descriptive
+[Statistics::Descriptive](https://metacpan.org/pod/Statistics::Descriptive)
