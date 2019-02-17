@@ -269,78 +269,164 @@ sub get_data
 	return @data;
 }
 
-sub frequency_distribution
-{
-	#Compute frequency distribution (histogram), borrowed heavily from Statistics::Descriptive
-	#Behavior is slightly different than Statistics::Descriptive
-	#e.g. if partition is not specified, we use uniq to set the number of partitions
-	#     if partition = 0, then we return the data hash WITHOUT binning it into equal bins
-	#	  I often want to just see how many of each value I saw 
-	#Also, you can manually pass in the bin info (min bin, bin size, and number of partitions)
-	#I don't cache the frequency data like Statistics::Descriptive does since it's not as expensive to compute
-	#but I might add that later
-	#todo: the minbin/binsize stuff is funky and not intuitive -- fix it
-	my $self = shift;
-	print __PACKAGE__,"->frequency_distribution(",join(',',@_),")\n" if $DEBUG;
+# sub frequency_distribution
+# {
+# 	#Compute frequency distribution (histogram), borrowed heavily from Statistics::Descriptive
+# 	#Behavior is slightly different than Statistics::Descriptive
+# 	#e.g. if partition is not specified, we use  to set the number of partitions
+# 	#     if partition = 0, then we return the data hash WITHOUT binning it into equal bins
+# 	#	  I often want to just see how many of each value I saw 
+# 	#Also, you can manually pass in the bin info (min bin, bin size, and number of partitions)
+# 	#I don't cache the frequency data like Statistics::Descriptive does since it's not as expensive to compute
+# 	#but I might add that later
+# 	#todo: the minbin/binsize stuff is funky and not intuitive -- fix it
+# 	my $self = shift;
+# 	print __PACKAGE__,"->frequency_distribution(",join(',',@_),")\n" if $DEBUG;
 
-	my $partitions = shift; #how many partitions (bins)?
-	my $minbin = shift; #upper bound of first bin
-	my $binsize = shift; #how wide is each bin?
+# 	my $partitions = shift; #how many partitions (bins)?
+# 	my $minbin = shift; #upper bound of first bin
+# 	my $binsize = shift; #how wide is each bin?
 	
-	#if partition == 0, then return the data hash
-	if (defined $partitions && ($partitions == 0))
-	{
-		$self->{frequency_partitions} = 0;
-		%{$self->{frequency}} = %{$self->{data}};
-		return %{$self->{frequency}};
-	}
+# 	#if partition == 0, then return the data hash
+# 	if (not defined $partitions || ($partitions == 0))
+# 	{
+# 		$self->{frequency_partitions} = 0;
+# 		%{$self->{frequency}} = %{$self->{data}};
+# 		return %{$self->{frequency}};
+# 	}
 
-	#otherwise, partition better be >= 1
-	return undef unless $partitions >= 1;
+# 	#otherwise, partition better be >= 1
+# 	return undef unless $partitions >= 1;
 
-	$self->_all_stats() if $self->{dirty}; #recompute stats if dirty, (so we have count)
-	return undef if $self->{count} < 2; #must have at least 2 values 
+# 	$self->_all_stats() if $self->{dirty}; #recompute stats if dirty, (so we have count)
+# 	return undef if $self->{count} < 2; #must have at least 2 values 
 
-	#set up the bins
-	my ($interval, $iter, $max);
-	if (defined $minbin && defined $binsize)
-	{
-		$iter = $minbin;
-		$max = $minbin+$partitions*$binsize - $binsize;
-		$interval = $binsize;
-		$iter -= $interval; #so that loop that sets up bins works correctly
-	}
-	else
-	{
-		$iter = $self->{min};
-		$max = $self->{max};
-		$interval = $self->{sample_range}/$partitions;
-	}
-	my @k;
-	my %bins;
-	while (($iter += $interval) < $max)
-	{
-		$bins{$iter} = 0;
-		push @k, $iter;
-	}
-	$bins{$max} = 0;
-	push @k, $max;
+# 	#set up the bins
+# 	my ($interval, $iter, $max);
+# 	if (defined $minbin && defined $binsize)
+# 	{
+# 		$iter = $minbin;
+# 		$max = $minbin+$partitions*$binsize - $binsize;
+# 		$interval = $binsize;
+# 		$iter -= $interval; #so that loop that sets up bins works correctly
+# 	}
+# 	else
+# 	{
+# 		$iter = $self->{min};
+# 		$max = $self->{max};
+# 		$interval = $self->{sample_range}/$partitions;
+# 	}
+# 	my @k;
+# 	my %bins;
+# 	while (($iter += $interval) < $max)
+# 	{
+# 		$bins{$iter} = 0;
+# 		push @k, $iter;
+# 	}
+# 	$bins{$max} = 0;
+# 	push @k, $max;
 
-	VALUE: foreach my $val (keys %{$self->{data}})
-	{
-		foreach my $k (@k)
-		{
-			if ($val <= $k)
-			{
-				$bins{$k} += $self->{data}{$val};  #how many of this value do we have?
-				next VALUE;
-			}
-		}
-	}
+# 	VALUE: foreach my $val (keys %{$self->{data}})
+# 	{
+# 		foreach my $k (@k)
+# 		{
+# 			if ($val <= $k)
+# 			{
+# 				$bins{$k} += $self->{data}{$val};  #how many of this value do we have?
+# 				next VALUE;
+# 			}
+# 		}
+# # 	}
 
-	%{$self->{frequency}} = %bins;   #save it for later in case I add caching
-	$self->{frequency_partitions} = $partitions; #in case I add caching in the future
-	return %{$self->{frequency}};
+# 	%{$self->{frequency}} = %bins;   #save it for later in case I add caching
+# 	$self->{frequency_partitions} = $partitions; #in case I add caching in the future
+# 	return %{$self->{frequency}};
+# }
+
+sub frequency_distribution_ref
+{
+    my $self = shift;
+    my @k = ();
+
+		$self->_all_stats() if $self->{dirty}; #recompute stats if dirty, (so we have count)
+
+    # Must have at least two elements
+    if ($self->count() < 2)
+    {
+        return undef;
+    }
+
+		#if no params and data not dirty and we've already computed _frequency,
+		#return the last _frequency calculated
+    if ((!@_) && (! $self->{dirty}) && (exists $self->{_frequency}))
+    {
+        return $self->{_frequency};
+    }
+
+    my %bins;
+    my $partitions = shift;
+
+    if (ref($partitions) eq 'ARRAY')
+    {
+        @k = @{ $partitions };
+        return undef unless @k;  ##Empty array
+        if (@k > 1) {
+            ##Check for monotonicity
+            my $element = $k[0];
+            for my $next_elem (@k[1..$#k]) {
+                if ($element > $next_elem) {
+                    carp "Non monotonic array cannot be used as frequency bins!\n";
+                    return undef;
+                }
+                $element = $next_elem;
+            }
+        }
+        %bins = map { $_ => 0 } @k;
+    }
+    else
+    {
+        return undef unless $partitions >= 1;
+        my $interval = $self->sample_range() / $partitions;
+        foreach my $idx (1 .. ($partitions-1))
+        {
+            push @k, ($self->min() + $idx * $interval);
+        }
+
+        $bins{$self->max()} = 0;
+
+        push @k, $self->max();
+    }
+
+    ELEMENT:
+    foreach my $element (keys %{$self->{data}})
+    {
+        foreach my $limit (@k)
+        {
+            if ($element <= $limit)
+            {
+                $bins{$limit} += $self->{data}{$element};
+                next ELEMENT;
+            }
+        }
+    }
+
+		$self->{_frequency} = \%bins;
+    return $self->{_frequency};
+}
+
+sub frequency_distribution {
+    my $self = shift;
+
+    my $ret = $self->frequency_distribution_ref(@_);
+
+    if (!defined($ret))
+    {
+        return undef;
+    }
+    else
+    {
+        return %$ret;
+    }
 }
 
 sub AUTOLOAD {

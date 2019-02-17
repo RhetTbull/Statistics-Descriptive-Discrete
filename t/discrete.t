@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 34;
+use Test::More tests => 41;
 use Statistics::Descriptive::Discrete;
 use lib 't/lib';
 use Utils qw/array_cmp/;
@@ -127,7 +127,57 @@ use Utils qw/array_cmp/;
     is($stats->maxdex,5,"maxdex = 5");
     $stats->add_data_tuple(0,1);
     is($stats->mindex,9,"mindex = 9");
+}
 
+{
+    #frequency distribution
+    my $stats = Statistics::Descriptive::Discrete->new();
+    $stats->add_data(1,1.5,2,2.5,3,3.5,4);
+    my $f = $stats->frequency_distribution_ref(2);
+    my %freq = (2.5 => 4, 4=>3);
+    is_deeply($f,\%freq,"frequency_distribution_ref 2 partitions");
+
+    #cached results
+    my $f2 = $stats->frequency_distribution_ref();
+    is_deeply($f2,\%freq,"cached frequency_distribution_ref");
+
+    #manual bin sizes
+    $stats->clear();
+    $stats->add_data_tuple(1,1,2,2,3,3,4,4,5,5,6,6,7,7);
+    %freq = (1=>1, 2=>2, 3=>3, 4=>4, 5=>5, 6=>6, 7=>7);
+    my @bins = (1,2,3,4,5,6,7);
+    $f = $stats->frequency_distribution_ref(\@bins);
+    is_deeply($f,\%freq,"manual bin sizes");
+
+    #manual bin sizes less than max
+    @bins = (2,4,6);
+    $f = $stats->frequency_distribution_ref(\@bins);
+    %freq = (2=>3,4=>7,6=>11);
+    is_deeply($f,\%freq,"manual bin sizes less than max");
+
+    #only 1 data element
+    $stats->clear();
+    $stats->add_data(1);
+    $f = $stats->frequency_distribution_ref(2);
+    is($f,undef,"can't compute frequency_distribution with a single data element");
+
+    #only 1 partition
+    $stats->clear();
+    $stats->add_data(1,2,3);
+    $f = $stats->frequency_distribution_ref(1);
+    is_deeply($f,{3=>3},"single partition");
+
+    #calling with no params returns last distribution calculated
+    $stats->add_data(4);
+    $f = $stats->frequency_distribution_ref();
+    is_deeply($f,{3=>3},"no parameters returns last distribution");
+
+    # $stats->clear();
+    # $stats->add_data_tuple(1,1,2,2,3,3,4,4,5,5,6,6,7,7);
+    # %freq = (1=>1, 2=>2, 3=>3, 4=>4, 5=>5, 6=>6, 7=>7);
+    # my @bins = [1,2,3,4,5,6,7];
+    # $f = $stats->frequency_distribution_ref(\@bins);
+    # is_deeply($f,\%freq,"frequency distribution bins");
 
 }
 
