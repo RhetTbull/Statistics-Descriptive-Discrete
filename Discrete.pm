@@ -8,7 +8,7 @@ use Carp;
 use AutoLoader;
 use vars qw($VERSION $AUTOLOAD $DEBUG $Tolerance %autosubs);
 
-$VERSION = '0.09';
+$VERSION = '0.10';
 $DEBUG = 0;
 
 $Tolerance = 0.0;
@@ -20,7 +20,6 @@ $Tolerance = 0.0;
 	geometric_mean=> undef,
 	harmonic_mean=>undef,
   sum					=> undef,
-  uniq					=> undef,
   mode					=> undef,
   median				=> undef,
   min					=> undef,
@@ -193,9 +192,6 @@ sub _all_stats
 
 	my @datakeys = keys %{$self->{data}};
 
-	#uniq = number of unique data values
-	my $uniq = @datakeys;
-
 	#initialize min, max, mode to an arbitrary value that's in the hash
 	my $default = $datakeys[0];
 	my $max  = $default; 
@@ -291,7 +287,6 @@ sub _all_stats
 	print __PACKAGE__,"count: $count, _index ",$self->{_index},"\n" if $DEBUG;
 
 	$self->{count}  = $count;
-	$self->{uniq}   = $uniq;
 	$self->{sum}    = $sum;
 	$self->{standard_deviation} = $stddev;
 	$self->{variance} = $variance;
@@ -299,7 +294,7 @@ sub _all_stats
 	$self->{max}    = $max;
 	$self->{mindex} = $mindex;
 	$self->{maxdex} = $maxdex;
-	$self->{sample_range} = $max - $min; #todo: does this require any bounds checking/
+	$self->{sample_range} = $max - $min; #todo: does this require any bounds checking
 	$self->{mean}    = $mean;
 	$self->{geometric_mean} = $gm;
 	$self->{harmonic_mean} = $harmonic_mean;
@@ -414,6 +409,15 @@ sub frequency_distribution_ref
     my $self = shift;
     my @k = ();
 
+		# If called with no parameters, return the cached hashref 
+		# if we have one and data is not dirty
+		# This is implemented this way because that's how Statistics::Descriptive
+		# implements this.  I don't like it.
+  	if ((!@_) && (! $self->{dirty}) && (defined $self->{_frequency}))
+    {
+        return $self->{_frequency};
+    }
+
 		$self->_all_stats() if $self->{dirty}; #recompute stats if dirty, (so we have count)
 
     # Must have at least two elements
@@ -421,16 +425,7 @@ sub frequency_distribution_ref
     {
         return undef;
     }
-
-		#if no params and data not dirty and we've already computed _frequency,
-		#return the last _frequency calculated
-		#todo: dirty will never be true here because it got cleared in call to _all_stats
-		# need to make sure this caching works
-    if ((!@_) && (! $self->{dirty}) && (exists $self->{_frequency}))
-    {
-        return $self->{_frequency};
-    }
-
+  
     my %bins;
     my $partitions = shift;
 
@@ -453,7 +448,7 @@ sub frequency_distribution_ref
     }
     else
     {
-        return undef unless $partitions >= 1;
+        return undef unless (defined $partitions) && ($partitions >= 1);
         my $interval = $self->sample_range() / $partitions;
         foreach my $idx (1 .. ($partitions-1))
         {
@@ -495,6 +490,31 @@ sub frequency_distribution {
     {
         return %$ret;
     }
+}
+
+# return count of unique values in data if called in scalar context
+# returns sorted array of unique data values if called in array context
+# returns undef if no data
+sub uniq
+{
+	my $self = shift;
+	
+	if (!$self->{data})
+	{
+		return undef;
+	}
+
+	my @datakeys = sort {$a <=> $b} keys %{$self->{data}};
+
+	if (wantarray)
+	{
+		return @datakeys;
+	}
+	else
+	{
+		my $uniq = @datakeys;
+		return $uniq;
+	}
 }
 
 sub AUTOLOAD {
@@ -628,10 +648,23 @@ Returns the total number of elements in the data set.
 
 =item $stat->uniq();
 
-Returns the total number of unique elements in the data set.
-For example, if your data set is (1,2,2,3,3,3), uniq will 
-return 3.  This function is specific to Statistics::Descriptive::Discrete
+If called in scalar context, returns the total number of unique elements in the data set.
+For example, if your data set is (1,2,2,3,3,3), uniq will return 3.  
+
+If called in array context, returns an array of each data value in the data set in sorted order.
+In the above example, C<< @uniq = $stats->uniq(); >> would return (1,2,3)
+
+This function is specific to Statistics::Descriptive::Discrete
 and is not implemented in Statistics::Descriptive.
+
+It is useful for getting a frequency distribution for each discrete value in the data the set:
+  my $stats = Statistics::Descriptive::Discrete->new();
+  $stats->add_data_tuple(1,1,2,2,3,3,4,4,5,5,6,6,7,7);
+  my @bins = $stats->uniq();
+  my $f = $stats->frequency_distribution_ref(\@bins);
+  for (sort {$a <=> $b} keys %$f) {
+  	print "value = $_, count = $f->{$_}\n";
+	}
 
 =item $stat->sum();
 
@@ -701,7 +734,7 @@ prints
 since there are four items less than or equal to 2.5, and 3 items
 greater than 2.5 and less than 4.
 
-C<frequency_distribution_refs(\@bins)> provides the bins that are to be used
+C<frequency_distribution_ref(\@bins)> provides the bins that are to be used
 for the distribution.  This allows for non-uniform distributions as
 well as trimmed or sample distributions to be found.  C<@bins> must
 be monotonic and must contain at least one element.  Note that unless the
