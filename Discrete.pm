@@ -560,6 +560,7 @@ To install, use the CPAN module (https://metacpan.org/pod/Statistics::Descriptiv
   print "max index = ",$stats->maxdex(),"\n";
   print "mean = ",$stats->mean(),"\n";
   print "geometric mean = ",$stats->geometric_mean(),"\n";
+  print "harmonic mean = ", $stats->harmonic_mean(),"\n";
   print "standard_deviation = ",$stats->standard_deviation(),"\n";
   print "variance = ",$stats->variance(),"\n";
   print "sample_range = ",$stats->sample_range(),"\n";
@@ -576,20 +577,27 @@ This module provides basic functions used in descriptive statistics.
 It borrows very heavily from Statistics::Descriptive::Full
 (which is included with Statistics::Descriptive) with one major
 difference.  This module is optimized for discretized data 
-e.g. data from an A/D conversion that 
-has a discrete set of possible values.  E.g. if your data is produced
-by an 8 bit A/D then you'd have only 256 possible values in your data 
-set.  Even though you might have a million data points, you'd only have
-256 different values in those million points.  Instead of storing the 
+e.g. data from an A/D conversion that  has a discrete set of possible values.  
+E.g. if your data is produced by an 8 bit A/D then you'd have only 256 possible 
+values in your data  set.  Even though you might have a million data points, 
+you'd only have 256 different values in those million points.  Instead of storing the 
 entire data set as Statistics::Descriptive does, this module only stores
-the values it's seen and the number of times it's seen each value.
+the values seen and the number of times each value occurs.
 
 For very large data sets, this storage method results in significant speed
-and memory improvements.  In a test case with 2.6 million data points from
-a real world application, Statistics::Descriptive::Discrete took 40 seconds 
-to calculate a set of statistics instead of the 561 seconds required by
-Statistics::Descriptive::Full.  It also required only 4MB of RAM instead of 
-the 400MB used by Statistics::Descriptive::Full for the same data set.
+and memory improvements.  For example, for an 8-bit data set (256 possible values),
+with 1,000,000 data points,  this module is about 10x faster than Statistics::Descriptive::Full 
+or Statistics::Descriptive::Sparse.  
+
+Statistics::Descriptive run time is a factor of the size of the data set. In particular,
+repeated calls to C<add_data> are slow.  Statistics::Descriptive::Discrete's C<add_data> is 
+optimized for speed.  For a give number of data points, this module's run time will increase 
+as the number of unique data values in the data set increases. For example, while this module
+runs about 10x the speed of Statistics::Descriptive::Full for an 8-bit data set, the 
+run speed drops to about 3x for an equivalent sized 20-bit data set.  
+
+See sdd_prof.pl in the examples directory to play with profiling this module against 
+Statistics::Descriptive::Full.
 
 =head1 METHODS
 
@@ -658,13 +666,14 @@ This function is specific to Statistics::Descriptive::Discrete
 and is not implemented in Statistics::Descriptive.
 
 It is useful for getting a frequency distribution for each discrete value in the data the set:
-  my $stats = Statistics::Descriptive::Discrete->new();
-  $stats->add_data_tuple(1,1,2,2,3,3,4,4,5,5,6,6,7,7);
-  my @bins = $stats->uniq();
-  my $f = $stats->frequency_distribution_ref(\@bins);
-  for (sort {$a <=> $b} keys %$f) {
-  	print "value = $_, count = $f->{$_}\n";
-	}
+
+   my $stats = Statistics::Descriptive::Discrete->new();
+	 $stats->add_data_tuple(1,1,2,2,3,3,4,4,5,5,6,6,7,7);
+	 my @bins = $stats->uniq();
+	 my $f = $stats->frequency_distribution_ref(\@bins);
+	 for (sort {$a <=> $b} keys %$f) {
+		 print "value = $_, count = $f->{$_}\n";
+	 }
 
 =item $stat->sum();
 
@@ -809,10 +818,6 @@ Other bugs are lurking I'm sure.
 
 =item *
 
-Make test suite more robust
-
-=item *
-
 Add rest of methods (at least ones that don't depend on original order of data) 
 from Statistics::Descriptive
 
@@ -863,6 +868,9 @@ Bill Dueber for suggesting the add_data_tuple method.
 =head1 SEE ALSO
 
 Statistics::Descriptive
+
+Statistics::Discrete
+
 
 
 
