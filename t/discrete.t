@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 41;
+use Test::More tests => 45;
 use Statistics::Descriptive::Discrete;
 use lib 't/lib';
 use Utils qw/array_cmp/;
@@ -181,3 +181,27 @@ use Utils qw/array_cmp/;
 
 }
 
+{
+    # geometric mean
+    my $stats = Statistics::Descriptive::Discrete->new();
+    $stats->add_data(1,2,3,4);
+    my $gm = $stats->geometric_mean;
+    cmp_ok(abs($gm-2.213), "<", 0.001,"geometric mean approx 2.213");
+
+    $stats->clear();
+    $stats->add_data(4,1,1.0/32.0);
+    $gm = $stats->geometric_mean;
+    cmp_ok(abs($gm-.5),"<",0.0001,"geometric mean = 0.5");
+
+    # negative value should make mean undefined
+    $stats->clear();
+    $stats->add_data(-1,2,3,4);
+    $gm = $stats->geometric_mean;
+    is($gm,undef,"negative values make geometric mean undefined");
+
+    # any zero values make mean 0
+    $stats->clear();
+    $stats->add_data(0,1,2,3,4);
+    $gm = $stats->geometric_mean;
+    is($gm,0,"zero values make geometric mean zero");
+}
