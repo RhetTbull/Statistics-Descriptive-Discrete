@@ -11,6 +11,7 @@ use vars qw($VERSION $AUTOLOAD $DEBUG $Tolerance %autosubs);
 $VERSION = '0.10';
 $DEBUG = 0;
 
+#see Statistics::Descriptive documentation for use of $Tolerance
 $Tolerance = 0.0;
 
 #what subs can be autoloaded?
