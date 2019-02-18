@@ -10,7 +10,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 9;
+use Test::More tests => 13;
 
 use lib 't/lib';
 use Utils qw/is_between compare_hash_by_ranges/;
@@ -18,26 +18,26 @@ use Utils qw/is_between compare_hash_by_ranges/;
 use Benchmark;
 use Statistics::Descriptive::Discrete;
 
-=POD
-{
-    # test #1
-    my $stat = Statistics::Descriptive::Discrete->new();
-    my @results = $stat->least_squares_fit();
-    # TEST
-    ok (!scalar(@results), "Least-squares results on a non-filled object are empty.");
 
-    # test #2
-    # data are y = 2*x - 1
+# {
+#     # test #1
+#     my $stat = Statistics::Descriptive::Discrete->new();
+#     my @results = $stat->least_squares_fit();
+#     # TEST
+#     ok (!scalar(@results), "Least-squares results on a non-filled object are empty.");
 
-    $stat->add_data( 1, 3, 5, 7 );
-    @results = $stat->least_squares_fit();
-    # TEST
-    is_deeply (
-        [@results[0..1]],
-        [-1, 2],
-        "least_squares_fit returns the correct result."
-    );
-}
+#     # test #2
+#     # data are y = 2*x - 1
+
+#     $stat->add_data( 1, 3, 5, 7 );
+#     @results = $stat->least_squares_fit();
+#     # TEST
+#     is_deeply (
+#         [@results[0..1]],
+#         [-1, 2],
+#         "least_squares_fit returns the correct result."
+#     );
+# }
 
 {
     # test #3
@@ -67,7 +67,7 @@ use Statistics::Descriptive::Discrete;
     # test #5
     # test error condition on harmonic mean : sum of elements near zero
     my $stat = Statistics::Descriptive::Discrete->new();
-    local $Statistics::Descriptive::Tolerance = 0.1;
+    local $Statistics::Descriptive::Discrete::Tolerance = 0.1;
     $stat->add_data( 1.01, -1.0 );
     my $single_result = $stat->harmonic_mean();
     # TEST
@@ -87,7 +87,7 @@ use Statistics::Descriptive::Discrete;
         "test normal function of harmonic mean",
     );
 }
-=cut
+
 
 {
     # test #7

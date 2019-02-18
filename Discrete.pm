@@ -6,16 +6,19 @@ use strict;
 use warnings;
 use Carp;
 use AutoLoader;
-use vars qw($VERSION $AUTOLOAD $DEBUG %autosubs);
+use vars qw($VERSION $AUTOLOAD $DEBUG $Tolerance %autosubs);
 
 $VERSION = '0.09';
 $DEBUG = 0;
+
+$Tolerance = 0.0;
 
 #what subs can be autoloaded?
 %autosubs = (
   count					=> undef,
   mean					=> undef,
 	geometric_mean=> undef,
+	harmonic_mean=>undef,
   sum					=> undef,
   uniq					=> undef,
   mode					=> undef,
@@ -125,6 +128,44 @@ sub add_data_tuple
 		$val = shift; #get next element
 		$count = shift; 
 	}
+}
+
+sub _test_for_too_small_val
+{
+    my $self = shift;
+    my $val = shift;
+
+    return (abs($val) <= $Statistics::Descriptive::Discrete::Tolerance);
+}
+
+sub _calc_harmonic_mean
+{
+    my $self = shift;
+		my $count = shift;
+		my $datakeys = shift; #array ref
+
+    my $hs = 0;
+
+    foreach my $val ( @{$datakeys} )
+    {
+        ##Guarantee that there are no divide by zeros
+        if ($self->_test_for_too_small_val($val))
+        {
+            return;
+        }
+			
+				foreach (1..$self->{data}{$val})
+				{
+        	$hs += 1/$val;
+				}
+    }
+
+    if ($self->_test_for_too_small_val($hs))
+    {
+        return;
+    }
+
+    return $count/$hs;
 }
 
 sub _all_stats
@@ -244,6 +285,9 @@ sub _all_stats
 				}
 		}
 
+	#compute harmonic mean
+	my $harmonic_mean = scalar $self->_calc_harmonic_mean($count, \@datakeys);
+
 	print __PACKAGE__,"count: $count, _index ",$self->{_index},"\n" if $DEBUG;
 
 	$self->{count}  = $count;
@@ -258,6 +302,7 @@ sub _all_stats
 	$self->{sample_range} = $max - $min; #todo: does this require any bounds checking/
 	$self->{mean}    = $mean;
 	$self->{geometric_mean} = $gm;
+	$self->{harmonic_mean} = $harmonic_mean;
 	$self->{median} = $median;
 	$self->{mode}   = $mode;
 
@@ -379,6 +424,8 @@ sub frequency_distribution_ref
 
 		#if no params and data not dirty and we've already computed _frequency,
 		#return the last _frequency calculated
+		#todo: dirty will never be true here because it got cleared in call to _all_stats
+		# need to make sure this caching works
     if ((!@_) && (! $self->{dirty}) && (exists $self->{_frequency}))
     {
         return $self->{_frequency};

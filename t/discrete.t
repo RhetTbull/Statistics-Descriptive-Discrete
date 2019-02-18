@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 45;
+use Test::More tests => 46;
 use Statistics::Descriptive::Discrete;
 use lib 't/lib';
 use Utils qw/array_cmp/;
@@ -204,4 +204,15 @@ use Utils qw/array_cmp/;
     $stats->add_data(0,1,2,3,4);
     $gm = $stats->geometric_mean;
     is($gm,0,"zero values make geometric mean zero");
+}
+
+{
+    # test normal function of harmonic mean
+    my $stat = Statistics::Descriptive::Discrete->new();
+    $stat->add_data( 60, 20 );
+    my $single_result = $stat->harmonic_mean();
+    # TEST
+    ok (scalar(abs( $single_result - 30.0 ) < 0.001),
+        "test normal function of harmonic mean",
+    );
 }
