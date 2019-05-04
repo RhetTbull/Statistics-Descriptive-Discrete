@@ -253,7 +253,6 @@ Any differences are noted in the description for each method.
 # BUGS
 
 - Code for calculating mode is not as robust as it should be.
-- Other bugs are lurking I'm sure.
 
 # TODO
 
